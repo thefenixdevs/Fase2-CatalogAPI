@@ -47,10 +47,17 @@ public static class InfrastructureServiceExtensions
                 {
                     h.Username(rabbitMqUsername);
                     h.Password(rabbitMqPassword);
+                    
+                    // Configurações de conexão mais robustas
+                    h.RequestedConnectionTimeout(TimeSpan.FromSeconds(30));
+                    h.Heartbeat(TimeSpan.FromSeconds(10));
+                    h.RequestedChannelMax(200);
                 });
 
+                // Configuração de retry para mensagens
                 cfg.UseMessageRetry(r => r.Exponential(3, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(8), TimeSpan.FromSeconds(2)));
 
+                // Circuit breaker para evitar sobrecarga
                 cfg.UseCircuitBreaker(cb =>
                 {
                     cb.TrackingPeriod = TimeSpan.FromMinutes(1);
@@ -59,6 +66,14 @@ public static class InfrastructureServiceExtensions
                     cb.ResetInterval = TimeSpan.FromSeconds(30);
                 });
             });
+        });
+
+        // Configuração para iniciar o MassTransit apenas quando necessário
+        services.Configure<MassTransitHostOptions>(options =>
+        {
+            options.WaitUntilStarted = false;
+            options.StartTimeout = TimeSpan.FromSeconds(60);
+            options.StopTimeout = TimeSpan.FromSeconds(30);
         });
 
         // Add Outbox Processor Background Service

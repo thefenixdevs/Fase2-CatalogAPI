@@ -10,7 +10,6 @@ namespace CatalogAPI.API.Controllers.V1;
 
 [ApiController]
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/[controller]")]
 public class GamesController : ControllerBase
 {
     private readonly IMediator _mediator;

@@ -1,10 +1,6 @@
-using CatalogAPI.Application.Commands;
-using CatalogAPI.Application.DTOs;
 using CatalogAPI.Application.Mappings;
-using CatalogAPI.Application.Queries;
 using FluentValidation;
 using Mapster;
-using Mediator;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
@@ -16,12 +12,12 @@ public static class ApplicationServiceExtensions
     {
         var applicationAssembly = Assembly.Load("CatalogAPI.Application");
 
-        // Add Mediator core service as singleton
-        services.AddSingleton<Mediator.Mediator>();
-        
-        // Register handlers as Scoped to avoid DI lifetime issues with DbContext
-        services.AddScoped<ICommandHandler<PurchaseGameCommand, Guid>, PurchaseGameCommandHandler>();
-        services.AddScoped<IQueryHandler<GetGamesQuery, PaginatedResultDto<GameDto>>, GetGamesQueryHandler>();
+        // Add Mediator with Scoped lifetime to work with DbContext
+        services.AddMediator(options =>
+        {
+            options.Namespace = "CatalogAPI.Application";
+            options.ServiceLifetime = ServiceLifetime.Scoped;
+        });
 
         // Add FluentValidation
         services.AddValidatorsFromAssembly(applicationAssembly);

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.OpenApi;
 
 namespace CatalogAPI.CrossCutting.DependencyInjection;
 
@@ -20,6 +21,31 @@ public static class ApiServiceExtensions
             options.AssumeDefaultVersionWhenUnspecified = true;
             options.ReportApiVersions = true;
         }).AddMvc();
+
+        // Add Swagger/OpenAPI
+        services.AddSwaggerGen(options =>
+        {
+            options.SwaggerDoc("v1", new OpenApiInfo
+            {
+                Title = "Catalog API",
+                Version = "v1",
+                Description = "API de Catálogo de Jogos - FIAP",
+                Contact = new OpenApiContact
+                {
+                    Name = "FIAP"
+                }
+            });
+
+            // Add authorization header to Swagger
+            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                Description = "JWT Authorization header using the Bearer scheme."
+            });
+
+        });
 
         // Add Controllers
         services.AddControllers();
@@ -50,6 +76,14 @@ public static class ApiServiceExtensions
 
     public static WebApplication UseApiConfiguration(this WebApplication app)
     {
+        // Enable Swagger and Swagger UI
+        app.UseSwagger();
+        app.UseSwaggerUI(options =>
+        {
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "Catalog API v1");
+            options.RoutePrefix = string.Empty; // Swagger na raiz (/)
+        });
+
         app.MapHealthChecks("/health", new HealthCheckOptions
         {
             ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
