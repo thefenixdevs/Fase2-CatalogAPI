@@ -1,0 +1,71 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "S:\\EstudoPos\\Projetos .NET\\FASE2\\Fase2-CatalogAPI\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{3C30C858-B915-41D1-A411-DB938797C2AD}|src\\CatalogAPI.API\\CatalogAPI.API.csproj|s:\\estudopos\\projetos .net\\fase2\\fase2-catalogapi\\src\\catalogapi.api\\controllers\\v1\\gamescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3C30C858-B915-41D1-A411-DB938797C2AD}|src\\CatalogAPI.API\\CatalogAPI.API.csproj|solutionrelative:src\\catalogapi.api\\controllers\\v1\\gamescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{12FE15F6-0C4C-4532-AF44-68D86AEF866D}|src\\CatalogAPI.CrossCutting\\CatalogAPI.CrossCutting.csproj|s:\\estudopos\\projetos .net\\fase2\\fase2-catalogapi\\src\\catalogapi.crosscutting\\dependencyinjection\\applicationserviceextensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{12FE15F6-0C4C-4532-AF44-68D86AEF866D}|src\\CatalogAPI.CrossCutting\\CatalogAPI.CrossCutting.csproj|solutionrelative:src\\catalogapi.crosscutting\\dependencyinjection\\applicationserviceextensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3C30C858-B915-41D1-A411-DB938797C2AD}|src\\CatalogAPI.API\\CatalogAPI.API.csproj|s:\\estudopos\\projetos .net\\fase2\\fase2-catalogapi\\src\\catalogapi.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3C30C858-B915-41D1-A411-DB938797C2AD}|src\\CatalogAPI.API\\CatalogAPI.API.csproj|solutionrelative:src\\catalogapi.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ApplicationServiceExtensions.cs",
+              "DocumentMoniker": "S:\\EstudoPos\\Projetos .NET\\FASE2\\Fase2-CatalogAPI\\src\\CatalogAPI.CrossCutting\\DependencyInjection\\ApplicationServiceExtensions.cs",
+              "RelativeDocumentMoniker": "src\\CatalogAPI.CrossCutting\\DependencyInjection\\ApplicationServiceExtensions.cs",
+              "ToolTip": "S:\\EstudoPos\\Projetos .NET\\FASE2\\Fase2-CatalogAPI\\src\\CatalogAPI.CrossCutting\\DependencyInjection\\ApplicationServiceExtensions.cs",
+              "RelativeToolTip": "src\\CatalogAPI.CrossCutting\\DependencyInjection\\ApplicationServiceExtensions.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAAA4AAABdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-09T00:30:37.958Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "GamesController.cs",
+              "DocumentMoniker": "S:\\EstudoPos\\Projetos .NET\\FASE2\\Fase2-CatalogAPI\\src\\CatalogAPI.API\\Controllers\\V1\\GamesController.cs",
+              "RelativeDocumentMoniker": "src\\CatalogAPI.API\\Controllers\\V1\\GamesController.cs",
+              "ToolTip": "S:\\EstudoPos\\Projetos .NET\\FASE2\\Fase2-CatalogAPI\\src\\CatalogAPI.API\\Controllers\\V1\\GamesController.cs",
+              "RelativeToolTip": "src\\CatalogAPI.API\\Controllers\\V1\\GamesController.cs",
+              "ViewState": "AgIAABYAAAAAAAAAAAAgwBQAAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-09T00:29:40.196Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Program.cs",
+              "DocumentMoniker": "S:\\EstudoPos\\Projetos .NET\\FASE2\\Fase2-CatalogAPI\\src\\CatalogAPI.API\\Program.cs",
+              "RelativeDocumentMoniker": "src\\CatalogAPI.API\\Program.cs",
+              "ToolTip": "S:\\EstudoPos\\Projetos .NET\\FASE2\\Fase2-CatalogAPI\\src\\CatalogAPI.API\\Program.cs",
+              "RelativeToolTip": "src\\CatalogAPI.API\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAD0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-08T23:56:53.991Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -12,19 +12,19 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["CatalogAPI.csproj", "."]
-RUN dotnet restore "./CatalogAPI.csproj"
+COPY ["src/CatalogAPI.Api/CatalogAPI.Api/CatalogAPI.Api.csproj", "src/CatalogAPI.Api/CatalogAPI.Api/"]
+RUN dotnet restore "./src/CatalogAPI.Api/CatalogAPI.Api/CatalogAPI.Api.csproj"
 COPY . .
-WORKDIR "/src/."
-RUN dotnet build "./CatalogAPI.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/src/CatalogAPI.Api/CatalogAPI.Api"
+RUN dotnet build "./CatalogAPI.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # Esta fase é usada para publicar o projeto de serviço a ser copiado para a fase final
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./CatalogAPI.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./CatalogAPI.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # Esta fase é usada na produção ou quando executada no VS no modo normal (padrão quando não está usando a configuração de Depuração)
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "CatalogAPI.dll"]
+ENTRYPOINT ["dotnet", "CatalogAPI.Api.dll"]

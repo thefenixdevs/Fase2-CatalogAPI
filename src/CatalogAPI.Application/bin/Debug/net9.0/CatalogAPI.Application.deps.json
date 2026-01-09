@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v9.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v9.0": {
+      "CatalogAPI.Application/1.0.0": {
+        "runtime": {
+          "CatalogAPI.Application.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "CatalogAPI.Application/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

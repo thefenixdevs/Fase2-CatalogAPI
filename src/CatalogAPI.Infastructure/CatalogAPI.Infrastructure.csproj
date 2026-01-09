@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Configuration\" />
+    <Folder Include="Interfaces\" />
+    <Folder Include="Messaging\" />
+    <Folder Include="Migrations\" />
+    <Folder Include="Persistence\" />
+    <Folder Include="Repositories\" />
+    <Folder Include="Security\" />
+  </ItemGroup>
+
+</Project>

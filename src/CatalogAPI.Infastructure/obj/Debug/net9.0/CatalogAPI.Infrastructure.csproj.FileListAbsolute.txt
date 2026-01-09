@@ -1,0 +1,11 @@
+S:\EstudoPos\Projetos .NET\FASE2\temp\CatalogAPI\src\CatalogAPI.Infastructure\bin\Debug\net9.0\CatalogAPI.Infrastructure.deps.json
+S:\EstudoPos\Projetos .NET\FASE2\temp\CatalogAPI\src\CatalogAPI.Infastructure\bin\Debug\net9.0\CatalogAPI.Infrastructure.dll
+S:\EstudoPos\Projetos .NET\FASE2\temp\CatalogAPI\src\CatalogAPI.Infastructure\bin\Debug\net9.0\CatalogAPI.Infrastructure.pdb
+S:\EstudoPos\Projetos .NET\FASE2\temp\CatalogAPI\src\CatalogAPI.Infastructure\obj\Debug\net9.0\CatalogAPI.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+S:\EstudoPos\Projetos .NET\FASE2\temp\CatalogAPI\src\CatalogAPI.Infastructure\obj\Debug\net9.0\CatalogAPI.Infrastructure.AssemblyInfoInputs.cache
+S:\EstudoPos\Projetos .NET\FASE2\temp\CatalogAPI\src\CatalogAPI.Infastructure\obj\Debug\net9.0\CatalogAPI.Infrastructure.AssemblyInfo.cs
+S:\EstudoPos\Projetos .NET\FASE2\temp\CatalogAPI\src\CatalogAPI.Infastructure\obj\Debug\net9.0\CatalogAPI.Infrastructure.csproj.CoreCompileInputs.cache
+S:\EstudoPos\Projetos .NET\FASE2\temp\CatalogAPI\src\CatalogAPI.Infastructure\obj\Debug\net9.0\CatalogAPI.Infrastructure.dll
+S:\EstudoPos\Projetos .NET\FASE2\temp\CatalogAPI\src\CatalogAPI.Infastructure\obj\Debug\net9.0\refint\CatalogAPI.Infrastructure.dll
+S:\EstudoPos\Projetos .NET\FASE2\temp\CatalogAPI\src\CatalogAPI.Infastructure\obj\Debug\net9.0\CatalogAPI.Infrastructure.pdb
+S:\EstudoPos\Projetos .NET\FASE2\temp\CatalogAPI\src\CatalogAPI.Infastructure\obj\Debug\net9.0\ref\CatalogAPI.Infrastructure.dll

@@ -1,0 +1,11 @@
+S:\EstudoPos\Projetos .NET\FASE2\temp\CatalogAPI\src\CatalogAPI.Domain\bin\Debug\net9.0\CatalogAPI.Domain.deps.json
+S:\EstudoPos\Projetos .NET\FASE2\temp\CatalogAPI\src\CatalogAPI.Domain\bin\Debug\net9.0\CatalogAPI.Domain.dll
+S:\EstudoPos\Projetos .NET\FASE2\temp\CatalogAPI\src\CatalogAPI.Domain\bin\Debug\net9.0\CatalogAPI.Domain.pdb
+S:\EstudoPos\Projetos .NET\FASE2\temp\CatalogAPI\src\CatalogAPI.Domain\obj\Debug\net9.0\CatalogAPI.Domain.GeneratedMSBuildEditorConfig.editorconfig
+S:\EstudoPos\Projetos .NET\FASE2\temp\CatalogAPI\src\CatalogAPI.Domain\obj\Debug\net9.0\CatalogAPI.Domain.AssemblyInfoInputs.cache
+S:\EstudoPos\Projetos .NET\FASE2\temp\CatalogAPI\src\CatalogAPI.Domain\obj\Debug\net9.0\CatalogAPI.Domain.AssemblyInfo.cs
+S:\EstudoPos\Projetos .NET\FASE2\temp\CatalogAPI\src\CatalogAPI.Domain\obj\Debug\net9.0\CatalogAPI.Domain.csproj.CoreCompileInputs.cache
+S:\EstudoPos\Projetos .NET\FASE2\temp\CatalogAPI\src\CatalogAPI.Domain\obj\Debug\net9.0\CatalogAPI.Domain.dll
+S:\EstudoPos\Projetos .NET\FASE2\temp\CatalogAPI\src\CatalogAPI.Domain\obj\Debug\net9.0\refint\CatalogAPI.Domain.dll
+S:\EstudoPos\Projetos .NET\FASE2\temp\CatalogAPI\src\CatalogAPI.Domain\obj\Debug\net9.0\CatalogAPI.Domain.pdb
+S:\EstudoPos\Projetos .NET\FASE2\temp\CatalogAPI\src\CatalogAPI.Domain\obj\Debug\net9.0\ref\CatalogAPI.Domain.dll
