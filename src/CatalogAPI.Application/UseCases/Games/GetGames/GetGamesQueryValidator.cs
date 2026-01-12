@@ -1,7 +1,6 @@
-using CatalogAPI.Application.Queries;
 using FluentValidation;
 
-namespace CatalogAPI.Application.Validators;
+namespace CatalogAPI.Application.UseCases.Games.GetGames;
 
 public class GetGamesQueryValidator : AbstractValidator<GetGamesQuery>
 {

@@ -15,16 +15,27 @@ public static class ApiServiceExtensions
         IConfiguration configuration)
     {
         // Add API Versioning
+        // Version is now optional - defaults to 1.0 if not specified
+        // Can be provided via query string (?api-version=1.0) or header (api-version: 1.0)
         services.AddApiVersioning(options =>
         {
             options.DefaultApiVersion = new ApiVersion(1, 0);
             options.AssumeDefaultVersionWhenUnspecified = true;
             options.ReportApiVersions = true;
-        }).AddMvc();
+            // Use query string or header for versioning (optional)
+            // If not specified, defaults to 1.0
+            options.ApiVersionReader = ApiVersionReader.Combine(
+                new QueryStringApiVersionReader("api-version"),
+                new HeaderApiVersionReader("api-version")
+            );
+        })
+        .AddMvc();
 
-        // Add Swagger/OpenAPI
+        // Add Swagger/OpenAPI with versioning support
         services.AddSwaggerGen(options =>
         {
+            // Configure Swagger to automatically use API versioning
+            // The version will be determined by the selected definition in Swagger UI
             options.SwaggerDoc("v1", new OpenApiInfo
             {
                 Title = "Catalog API",
@@ -36,15 +47,20 @@ public static class ApiServiceExtensions
                 }
             });
 
-            // Add authorization header to Swagger
-            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            // Add authorization header to Swagger using Swashbuckle v10.0.0 syntax
+            options.AddSecurityDefinition("bearer", new OpenApiSecurityScheme
             {
                 Type = SecuritySchemeType.Http,
                 Scheme = "bearer",
                 BearerFormat = "JWT",
-                Description = "JWT Authorization header using the Bearer scheme."
+                Description = "JWT Authorization header using the Bearer scheme. Enter only the token (without 'Bearer')"
             });
 
+            // Apply security requirement to all endpoints using Swashbuckle v10.0.0 syntax
+            options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+            {
+                [new OpenApiSecuritySchemeReference("bearer", document)] = []
+            });
         });
 
         // Add Controllers
@@ -81,7 +97,7 @@ public static class ApiServiceExtensions
         app.UseSwaggerUI(options =>
         {
             options.SwaggerEndpoint("/swagger/v1/swagger.json", "Catalog API v1");
-            options.RoutePrefix = string.Empty; // Swagger na raiz (/)
+            options.RoutePrefix = "swagger"; // Swagger em /swagger para consistência
         });
 
         app.MapHealthChecks("/health", new HealthCheckOptions

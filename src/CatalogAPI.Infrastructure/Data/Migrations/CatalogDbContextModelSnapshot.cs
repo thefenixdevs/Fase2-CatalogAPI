@@ -17,7 +17,7 @@ namespace CatalogAPI.Infrastructure.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.1")
+                .HasAnnotation("ProductVersion", "10.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -73,7 +73,7 @@ namespace CatalogAPI.Infrastructure.Data.Migrations
                             ImageUrl = "https://image.api.playstation.com/vulcan/ap/rnd/202207/1210/4xJ8XB3bi888QTLZYdl7Oi0s.png",
                             Name = "God of War Ragnarök",
                             Price = 59.99m,
-                            ReleaseDate = new DateTime(2022, 11, 9, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                            ReleaseDate = new DateTime(2022, 11, 9, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -84,7 +84,7 @@ namespace CatalogAPI.Infrastructure.Data.Migrations
                             ImageUrl = "https://cdn.cloudflare.steamstatic.com/steam/apps/1245620/header.jpg",
                             Name = "Elden Ring",
                             Price = 59.99m,
-                            ReleaseDate = new DateTime(2022, 2, 25, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                            ReleaseDate = new DateTime(2022, 2, 25, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -95,7 +95,7 @@ namespace CatalogAPI.Infrastructure.Data.Migrations
                             ImageUrl = "https://cdn.cloudflare.steamstatic.com/steam/apps/2195250/header.jpg",
                             Name = "FIFA 25",
                             Price = 69.99m,
-                            ReleaseDate = new DateTime(2024, 9, 27, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                            ReleaseDate = new DateTime(2024, 9, 27, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -106,7 +106,7 @@ namespace CatalogAPI.Infrastructure.Data.Migrations
                             ImageUrl = "https://cdn.cloudflare.steamstatic.com/steam/apps/1942280/header.jpg",
                             Name = "Minecraft",
                             Price = 26.95m,
-                            ReleaseDate = new DateTime(2011, 11, 18, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                            ReleaseDate = new DateTime(2011, 11, 18, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -117,7 +117,7 @@ namespace CatalogAPI.Infrastructure.Data.Migrations
                             ImageUrl = "https://cdn.cloudflare.steamstatic.com/steam/apps/1091500/header.jpg",
                             Name = "Cyberpunk 2077",
                             Price = 39.99m,
-                            ReleaseDate = new DateTime(2020, 12, 10, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                            ReleaseDate = new DateTime(2020, 12, 10, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -128,7 +128,7 @@ namespace CatalogAPI.Infrastructure.Data.Migrations
                             ImageUrl = "https://cdn.cloudflare.steamstatic.com/steam/apps/292030/header.jpg",
                             Name = "The Witcher 3: Wild Hunt",
                             Price = 29.99m,
-                            ReleaseDate = new DateTime(2015, 5, 19, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                            ReleaseDate = new DateTime(2015, 5, 19, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -139,7 +139,7 @@ namespace CatalogAPI.Infrastructure.Data.Migrations
                             ImageUrl = "https://media-rockstargames-com.akamaized.net/mfe6/prod/__common/img/71d4d8a6006e148ceb6da1bcbf06c3c5.jpg",
                             Name = "Grand Theft Auto VI",
                             Price = 69.99m,
-                            ReleaseDate = new DateTime(2025, 3, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                            ReleaseDate = new DateTime(2025, 3, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -150,7 +150,7 @@ namespace CatalogAPI.Infrastructure.Data.Migrations
                             ImageUrl = "https://cdn.cloudflare.steamstatic.com/steam/apps/413150/header.jpg",
                             Name = "Stardew Valley",
                             Price = 14.99m,
-                            ReleaseDate = new DateTime(2016, 2, 26, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                            ReleaseDate = new DateTime(2016, 2, 26, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -161,7 +161,7 @@ namespace CatalogAPI.Infrastructure.Data.Migrations
                             ImageUrl = "https://cdn.cloudflare.steamstatic.com/steam/apps/1145350/header.jpg",
                             Name = "Hades II",
                             Price = 29.99m,
-                            ReleaseDate = new DateTime(2024, 5, 6, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                            ReleaseDate = new DateTime(2024, 5, 6, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -172,7 +172,7 @@ namespace CatalogAPI.Infrastructure.Data.Migrations
                             ImageUrl = "https://cdn.cloudflare.steamstatic.com/steam/apps/1086940/header.jpg",
                             Name = "Baldur's Gate 3",
                             Price = 59.99m,
-                            ReleaseDate = new DateTime(2023, 8, 3, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                            ReleaseDate = new DateTime(2023, 8, 3, 0, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
 

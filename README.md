@@ -6,10 +6,11 @@ A production-ready REST API built with .NET 10 and Clean Architecture for managi
 
 CatalogAPI enables users to:
 - Browse a catalog of games with pagination (20 items per page)
-- Purchase games and add them to their personal library
-- Automatic event publishing when purchases occur via RabbitMQ
+- Initiate game purchases (order placement)
+- View their personal game library
+- Automatic event-driven processing via RabbitMQ
 
-The API implements the **Outbox Pattern** for transactional consistency, ensuring that purchase events are reliably published even in case of failures.
+The API implements the **Manual Outbox Pattern** for transactional consistency, ensuring that purchase events are reliably published even in case of failures. The purchase flow is fully event-driven: games are added to the user's library only after payment approval from PaymentsAPI.
 
 ## Technology Stack
 
@@ -24,9 +25,10 @@ The API implements the **Outbox Pattern** for transactional consistency, ensurin
 - **Connection String (Docker):** `Host=postgres;Port=5432;Database=catalogdb;Username=admin;Password=admin123`
 
 ### Event-Driven Architecture
-- **MassTransit 8.3.4** - CQRS message bus
+- **Wolverine 5.9.2** - Message bus and event handling
+- **Wolverine.RabbitMQ 5.9.2** - RabbitMQ integration
 - **RabbitMQ 4.0** - Event broker
-- **Outbox Pattern** - Transactional event publishing with 5-second batch processing (100 items per batch)
+- **Manual Outbox Pattern** - Transactional event publishing with 5-second batch processing (100 items per batch)
 
 ### CQRS & Mediator
 - **Mediator 2.1.7** (Source-generated) - Command/Query dispatcher
@@ -34,9 +36,9 @@ The API implements the **Outbox Pattern** for transactional consistency, ensurin
 - **Mapster 7.4.0** - Object mapping
 
 ### Resilience & Distributed Patterns
-- **Polly 8.5.0** - Retry policies (3 attempts, exponential backoff)
+- **Polly 8.6.5** - Retry policies (3 attempts, exponential backoff)
 - **Circuit Breaker** - Threshold: 5 failures, Timeout: 30s
-- **Compensating Transactions** - Rollback mechanism for failed MassTransit publishing
+- **Manual Outbox Pattern** - Ensures reliable event publishing even in case of failures
 
 ### Observability
 - **Serilog 8.0.3** - Structured logging
@@ -44,8 +46,9 @@ The API implements the **Outbox Pattern** for transactional consistency, ensurin
 - **Health Checks** - PostgreSQL and RabbitMQ monitoring
 
 ### API & Documentation
-- **Asp.Versioning 8.1.0** - API v1.0
+- **Asp.Versioning 8.1.1** - API v1.0 (version via query string or header, optional)
 - **Controllers-based** REST API
+- **Swagger/OpenAPI** - Interactive API documentation
 
 ### Testing
 - **xUnit** - Unit testing framework
@@ -94,34 +97,39 @@ The API implements the **Outbox Pattern** for transactional consistency, ensurin
    └───────────┘      └────────────┘
 ```
 
-### Data Flow - Purchase Game
+### Data Flow - Purchase Game (Event-Driven)
 
 ```
-User Request (with Bearer token)
+1. User Request (with Bearer token)
+   POST /api/games/{gameId}/purchase
     ↓
-[CorrelationIdMiddleware] - Generate/Extract X-Correlation-Id
+2. [CorrelationIdMiddleware] - Generate/Extract X-Correlation-Id
     ↓
-[AuthenticationMiddleware] - Validate token via external service
+3. [AuthenticationMiddleware] - Validate token via external service
     ↓
-[GamesController.POST /api/v1/games/{id}/purchase]
-    ↓
-[PurchaseGameCommand] → [Mediator.Send()]
-    ↓
-[PurchaseGameCommandHandler]
-    ├─→ UnitOfWork.BeginTransaction()
+4. [GamesController] → [PurchaseGameCommandHandler]
     ├─→ Validate game exists
     ├─→ Check user hasn't already purchased
-    ├─→ Create UserGame record
     ├─→ Create OutboxMessage (with OrderPlacedEvent JSON + CorrelationId)
-    ├─→ DbContext.SaveChanges()
-    ├─→ IPublishEndpoint.Publish(OrderPlacedEvent) via MassTransit
-    ├─→ On success: UnitOfWork.Commit()
-    └─→ On failure: UnitOfWork.RollbackAndThrow() [Compensating Transaction]
+    └─→ Save to database (game NOT added to library yet)
     ↓
-[OutboxProcessorService] (Background Service - 5s interval)
+5. [OutboxProcessorService] (Background Service - 5s interval)
     ├─→ Fetch unprocessed OutboxMessages (batch of 100)
-    ├─→ Publish each via MassTransit
+    ├─→ Publish OrderPlacedEvent to RabbitMQ exchange "order-placed-event"
     └─→ Mark as ProcessedAt = DateTime.UtcNow
+    ↓
+6. PaymentsAPI consumes OrderPlacedEvent
+    ├─→ Process payment (simulate)
+    └─→ Publish PaymentProcessedEvent to RabbitMQ queue "payment-processed-event"
+    ↓
+7. CatalogAPI consumes PaymentProcessedEvent
+    ├─→ If Status == "Approved":
+    │   ├─→ Add game to user's library (UserGame record)
+    │   └─→ Save changes
+    └─→ If Status == "Rejected": Log and skip
+    ↓
+8. NotificationsAPI consumes PaymentProcessedEvent
+    └─→ If Status == "Approved": Send confirmation email (simulated)
 ```
 
 ## API Endpoints
@@ -129,6 +137,24 @@ User Request (with Bearer token)
 ### Base URL
 - **Local Development:** `http://localhost:5000`
 - **Docker:** `http://localhost:8080`
+- **Swagger UI:** `http://localhost:8080` (root path)
+
+**Note:** API versioning is optional. The default version (1.0) is used automatically. You can specify version via:
+- Query string: `?api-version=1.0`
+- Header: `api-version: 1.0`
+
+### Endpoints Summary
+
+| Method | Endpoint | Description | Auth Required | Role |
+|--------|----------|-------------|---------------|------|
+| GET | `/api/games` | List games (paginated) | No | - |
+| POST | `/api/games` | Create game | Yes | Admin |
+| PUT | `/api/games/{gameId}` | Update game | Yes | Admin |
+| DELETE | `/api/games/{gameId}` | Delete game | Yes | Admin |
+| POST | `/api/games/{gameId}/purchase` | Initiate purchase | Yes | User |
+| GET | `/api/user-games` | Get user's library | Yes | User |
+| GET | `/api/user-games/{gameId}` | Get specific game from library | Yes | User |
+| GET | `/health` | Health check | No | - |
 
 ### Health Check
 ```bash
@@ -144,7 +170,7 @@ Response: {
 
 ### Get Games (Paginated)
 ```bash
-GET /api/v1/games?pageNumber=1&pageSize=20
+GET /api/games?page=1&pageSize=20
 
 Response: {
   "items": [
@@ -165,9 +191,9 @@ Response: {
 }
 ```
 
-### Purchase Game
+### Purchase Game (Initiates Order)
 ```bash
-POST /api/v1/games/{gameId}/purchase
+POST /api/games/{gameId}/purchase
 
 Headers:
   Authorization: Bearer {token}
@@ -175,17 +201,140 @@ Headers:
 
 Response (201 Created):
 {
-  "userGameId": "uuid",
-  "userId": "uuid",
   "gameId": "uuid",
-  "purchaseDate": "2026-01-08T14:28:54Z"
+  "message": "Game purchased successfully"
 }
+
+Note: This endpoint publishes OrderPlacedEvent. The game will be added to the user's library 
+only after PaymentProcessedEvent with status "Approved" is received from PaymentsAPI.
 
 Error Responses:
   404 Not Found - Game does not exist
   409 Conflict - User has already purchased this game
   401 Unauthorized - Invalid or missing bearer token
   500 Internal Server Error - Event publishing failed
+```
+
+### Get User's Game Library
+```bash
+GET /api/user-games
+
+Headers:
+  Authorization: Bearer {token}
+
+Response (200 OK):
+{
+  "items": [
+    {
+      "userId": "uuid",
+      "gameId": "uuid",
+      "purchaseDate": "2026-01-08T14:28:54Z",
+      "game": {
+        "id": "uuid",
+        "name": "God of War",
+        "description": "...",
+        "price": 59.99,
+        "genre": "Action",
+        "imageUrl": "...",
+        "developer": "Santa Monica Studio",
+        "releaseDate": "2018-04-20"
+      }
+    }
+  ],
+  "totalCount": 5,
+  "pageNumber": 1,
+  "pageSize": 5
+}
+
+Error Responses:
+  401 Unauthorized - Invalid or missing bearer token
+```
+
+### Get Specific Game from User's Library
+```bash
+GET /api/user-games/{gameId}
+
+Headers:
+  Authorization: Bearer {token}
+
+Response (200 OK):
+{
+  "userId": "uuid",
+  "gameId": "uuid",
+  "purchaseDate": "2026-01-08T14:28:54Z",
+  "game": { ... }
+}
+
+Error Responses:
+  401 Unauthorized - Invalid or missing bearer token
+  404 Not Found - Game not found in user's library
+```
+
+### Create Game (Admin Only)
+```bash
+POST /api/games
+
+Headers:
+  Authorization: Bearer {admin-token}
+  Content-Type: application/json
+
+Body:
+{
+  "name": "New Game",
+  "description": "Game description",
+  "price": 59.99,
+  "genre": "Action",
+  "imageUrl": "https://...",
+  "developer": "Developer Name",
+  "releaseDate": "2024-01-01T00:00:00Z"
+}
+
+Response (201 Created):
+{
+  "gameId": "uuid",
+  "message": "Game created successfully"
+}
+
+Error Responses:
+  401 Unauthorized - Invalid or missing bearer token
+  403 Forbidden - Admin role required
+  409 Conflict - Game already exists
+```
+
+### Update Game (Admin Only)
+```bash
+PUT /api/games/{gameId}
+
+Headers:
+  Authorization: Bearer {admin-token}
+  Content-Type: application/json
+
+Body: { ... }
+
+Response (200 OK):
+{
+  "message": "Game updated successfully"
+}
+
+Error Responses:
+  401 Unauthorized - Invalid or missing bearer token
+  403 Forbidden - Admin role required
+  404 Not Found - Game does not exist
+```
+
+### Delete Game (Admin Only)
+```bash
+DELETE /api/games/{gameId}
+
+Headers:
+  Authorization: Bearer {admin-token}
+
+Response (204 No Content)
+
+Error Responses:
+  401 Unauthorized - Invalid or missing bearer token
+  403 Forbidden - Admin role required
+  404 Not Found - Game does not exist
 ```
 
 ## Database Schema
@@ -220,12 +369,15 @@ CREATE TABLE user_games (
 ```sql
 CREATE TABLE outbox_messages (
   id UUID PRIMARY KEY,
-  event_type VARCHAR(500) NOT NULL,
-  payload TEXT NOT NULL,  -- JSON serialized OrderPlacedEvent
-  correlation_id UUID NOT NULL,
+  event_type VARCHAR(200) NOT NULL,
+  payload TEXT NOT NULL,  -- JSON serialized event (OrderPlacedEvent, etc.)
+  correlation_id VARCHAR(100) NOT NULL,
   created_at TIMESTAMP NOT NULL,
   processed_at TIMESTAMP  -- NULL while unprocessed
 );
+
+CREATE INDEX IX_OutboxMessages_CorrelationId ON outbox_messages(correlation_id);
+CREATE INDEX IX_OutboxMessages_ProcessedAt ON outbox_messages(processed_at);
 ```
 
 ## Seeded Games (10 items)
@@ -403,13 +555,14 @@ dotnet run --project src/CatalogAPI.API
 All requests are logged with correlation IDs to `/logs/catalog-{date}.txt`:
 
 ```
-2026-01-08 14:28:54.760 -03:00 [INF] [f47ac10b-58cc-4372-a567-0e02b2c3d479] Starting CatalogAPI application
-2026-01-08 14:28:55.123 -03:00 [INF] [a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6] POST /api/v1/games/a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6/purchase User: user@example.com
-2026-01-08 14:28:55.234 -03:00 [DBG] [a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6] Beginning transaction
-2026-01-08 14:28:55.345 -03:00 [DBG] [a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6] UserGame created: user_id=550e8400-e29b-41d4-a716-446655440000, game_id=a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6
-2026-01-08 14:28:55.456 -03:00 [DBG] [a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6] OutboxMessage created with OrderPlacedEvent
-2026-01-08 14:28:55.567 -03:00 [INF] [a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6] Transaction committed successfully
-2026-01-08 14:28:55.678 -03:00 [INF] [a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6] OrderPlacedEvent published via MassTransit
+2026-01-11 07:00:00.000 [INF] Starting CatalogAPI application
+2026-01-11 07:00:05.123 [INF] POST /api/games/{gameId}/purchase User: user@example.com
+2026-01-11 07:00:05.234 [INF] Processing purchase for GameId: {GameId}, UserId: {UserId}, CorrelationId: {CorrelationId}
+2026-01-11 07:00:05.345 [INF] OrderPlacedEvent published successfully. Waiting for payment processing...
+2026-01-11 07:00:10.456 [INF] Outbox Processor Service: Processing 1 outbox messages
+2026-01-11 07:00:10.567 [INF] Processed outbox message {MessageId} of type OrderPlacedEvent
+2026-01-11 07:00:15.678 [INF] Processing PaymentProcessedEvent. CorrelationId: {CorrelationId}, Status: Approved
+2026-01-11 07:00:15.789 [INF] Game successfully added to user library. UserId: {UserId}, GameId: {GameId}
 ```
 
 ## Authentication
@@ -417,8 +570,13 @@ All requests are logged with correlation IDs to `/logs/catalog-{date}.txt`:
 The API expects Bearer tokens in the `Authorization` header:
 
 ```bash
+# Purchase a game
 curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
-  http://localhost:8080/api/v1/games/gameid/purchase
+  -X POST http://localhost:8080/api/games/{gameId}/purchase
+
+# Get user's library
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  http://localhost:8080/api/user-games
 ```
 
 **Auth Service Validation**
@@ -427,57 +585,107 @@ curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
 - Returns fixed user: `{userId: "550e8400-e29b-41d4-a716-446655440000", role: "user", ...}`
 - Resilience: 3 retries + Circuit Breaker (threshold 5, timeout 30s)
 
-## Transaction Management (Outbox Pattern)
+## Event-Driven Architecture
 
-### Purchase Transaction Flow
+### Events
+
+#### OrderPlacedEvent
+Published by CatalogAPI when a user initiates a purchase:
+```csharp
+{
+    "correlationId": "uuid",
+    "userId": "uuid",
+    "gameId": "uuid",
+    "price": 59.99,
+    "occurredAt": "2026-01-11T07:00:00Z"
+}
+```
+- **Exchange:** `order-placed-event` (Topic)
+- **Consumers:** PaymentsAPI
+
+#### PaymentProcessedEvent
+Published by PaymentsAPI after processing payment:
+```csharp
+{
+    "correlationId": "uuid",
+    "userId": "uuid",
+    "gameId": "uuid",
+    "price": 59.99,
+    "status": "Approved" | "Rejected",
+    "occurredAt": "2026-01-11T07:00:05Z"
+}
+```
+- **Queue:** `payment-processed-event`
+- **Consumers:** CatalogAPI, NotificationsAPI
+
+### Outbox Pattern (Manual Implementation)
+
+The CatalogAPI implements a **manual Outbox Pattern** to ensure reliable event publishing:
+
+1. **Event Publishing:**
+   - When `OrderPlacedEvent` needs to be published, it's first saved to `OutboxMessages` table
+   - The database transaction commits, ensuring the event is persisted
+   - The event is NOT immediately published to RabbitMQ
+
+2. **Background Processing:**
+   - `OutboxProcessorService` runs every 5 seconds
+   - Fetches up to 100 unprocessed messages from `OutboxMessages`
+   - Publishes each event to RabbitMQ via Wolverine
+   - Marks messages as processed after successful publishing
+
+3. **Benefits:**
+   - **Transactional Consistency:** Events are saved in the same transaction as business data
+   - **Reliability:** Events are not lost even if RabbitMQ is temporarily unavailable
+   - **Idempotency:** CorrelationId ensures events are not processed twice
+   - **Retry Logic:** Failed messages remain unprocessed and will be retried
+
+### Purchase Flow Implementation
 
 ```csharp
-public async Task<Guid> Handle(PurchaseGameCommand request)
+// 1. PurchaseGameCommandHandler - Initiates order
+public async Task<Guid> Handle(PurchaseGameCommand command)
 {
-    await _unitOfWork.BeginTransaction(); // SQL: BEGIN
-    
-    var game = await _gameRepository.GetByIdAsync(request.GameId);
+    // Validate game exists
+    var game = await _gameRepository.GetByIdAsync(command.GameId);
     if (game == null) throw new GameNotFoundException();
     
-    var existing = await _userGameRepository.GetByUserAndGameAsync(request.UserId, request.GameId);
+    // Check if user already owns the game
+    var existing = await _userGameRepository.GetByUserAndGameAsync(command.UserId, command.GameId);
     if (existing != null) throw new GameAlreadyPurchasedException();
     
-    var userGame = new UserGame { UserId = request.UserId, GameId = request.GameId, PurchaseDate = DateTime.UtcNow };
-    await _userGameRepository.AddAsync(userGame);
+    // Create OrderPlacedEvent (game NOT added to library yet)
+    var orderPlacedEvent = new OrderPlacedEvent(command.CorrelationId, command.UserId, command.GameId, game.Price);
     
-    var @event = new OrderPlacedEvent(request.CorrelationId, request.UserId, request.GameId, game.Price);
-    var outboxMsg = new OutboxMessage
-    {
-        Id = Guid.NewGuid(),
-        EventType = nameof(OrderPlacedEvent),
-        Payload = JsonConvert.SerializeObject(@event),
-        CorrelationId = request.CorrelationId,
-        CreatedAt = DateTime.UtcNow
+    // Save to Outbox (will be published by OutboxProcessorService)
+    await _outbox.PublishAsync(orderPlacedEvent);
+    await _outbox.SaveChangesAndFlushMessagesAsync();
+    
+    return command.GameId; // Order placed, waiting for payment
+}
+
+// 2. ProcessPaymentEventHandler - Adds game to library after payment approval
+public async Task Handle(PaymentProcessedEvent message)
+{
+    if (message.Status != "Approved") return; // Skip if payment rejected
+    
+    // Add game to user's library
+    var userGame = new UserGame 
+    { 
+        UserId = message.UserId, 
+        GameId = message.GameId, 
+        PurchaseDate = DateTime.UtcNow 
     };
-    await _outboxRepository.AddAsync(outboxMsg);
     
-    await _unitOfWork.SaveChangesAsync(); // SQL: All inserts
-    
-    try
-    {
-        await _publishEndpoint.Publish(@event);
-        await _unitOfWork.Commit(); // SQL: COMMIT
-    }
-    catch
-    {
-        // Compensating Transaction
-        await _userGameRepository.RemoveAsync(userGame);
-        await _outboxRepository.RemoveAsync(outboxMsg);
-        await _unitOfWork.RollbackAndThrow(); // SQL: ROLLBACK + throw
-    }
+    await _userGameRepository.AddAsync(userGame);
+    await _unitOfWork.SaveChangesAsync();
 }
 ```
 
 **Key Properties:**
-- **Transactional Consistency:** UserGame + OutboxMessage created atomically
-- **Event Sourcing:** OrderPlacedEvent stored in OutboxMessage before publishing
-- **Idempotency:** CorrelationId used for deduplication
-- **Compensating Transactions:** Automatic rollback on MassTransit failure
+- **Event-Driven:** Game added to library only after payment approval
+- **Idempotency:** CorrelationId prevents duplicate processing
+- **Reliability:** Outbox Pattern ensures events are never lost
+- **Decoupling:** Services communicate asynchronously via events
 
 ## Building & Running Tests
 
@@ -504,25 +712,25 @@ Fase2-CatalogAPI/
 ├── src/
 │   ├── CatalogAPI.Domain/           # Business logic, entities
 │   │   ├── Entities/                # Game, UserGame, OutboxMessage
-│   │   ├── Events/                  # OrderPlacedEvent
+│   │   ├── Events/                  # OrderPlacedEvent, PaymentProcessedEvent
 │   │   ├── Interfaces/              # Repository & UnitOfWork contracts
 │   │   └── Exceptions/              # Domain-specific exceptions
 │   │
 │   ├── CatalogAPI.Application/      # CQRS, handlers, validators
-│   │   ├── Commands/                # PurchaseGameCommand
-│   │   ├── Queries/                 # GetGamesQuery
-│   │   ├── Handlers/                # Command/Query handlers
-│   │   ├── DTOs/                    # Data transfer objects
-│   │   ├── Validators/              # FluentValidation rules
+│   │   ├── UseCases/
+│   │   │   ├── Games/               # GetGamesQuery, CreateGameCommand, UpdateGameCommand, DeleteGameCommand
+│   │   │   └── UserGames/           # PurchaseGameCommand, GetUserGamesQuery, GetUserGameQuery, ProcessPaymentEventHandler
+│   │   ├── DTOs/                    # GameDto, UserGameDto, PaginatedResultDto, UserContextDto
 │   │   └── Mappings/                # Mapster configurations
 │   │
 │   ├── CatalogAPI.Infrastructure/   # Data access, external services
-│   │   ├── Data/                    # DbContext, migrations, repositories
-│   │   ├── Services/                # HttpAuthService, OutboxProcessorService
-│   │   └── Repositories/            # Implementation of domain interfaces
+│   │   ├── Data/                    # DbContext, migrations
+│   │   ├── BackgroundServices/      # OutboxProcessorService
+│   │   ├── Services/                # HttpAuthService
+│   │   └── Repositories/            # GameRepository, UserGameRepository, OutboxMessageRepository, ManualOutbox, UnitOfWork
 │   │
 │   ├── CatalogAPI.API/              # REST endpoints, middleware
-│   │   ├── Controllers/             # GamesController
+│   │   ├── Controllers/             # GamesController, UserGamesController
 │   │   ├── Middlewares/             # CorrelationId, Auth, Exception handling
 │   │   ├── auth-service/            # Mock Node.js auth service
 │   │   ├── Program.cs               # ASP.NET Core setup
@@ -563,9 +771,18 @@ Fase2-CatalogAPI/
 - Coordinate multiple repositories
 
 ### Background Services
-- OutboxProcessorService runs every 5 seconds
-- Publishes unprocessed OutboxMessages in batches of 100
-- Marks messages as processed after successful MassTransit publishing
+- **OutboxProcessorService** runs every 5 seconds
+  - Fetches unprocessed OutboxMessages in batches of 100
+  - Publishes events to RabbitMQ via Wolverine
+  - Marks messages as processed after successful publishing
+  - Retries failed messages automatically
+
+### Message Handlers (Wolverine)
+- **ProcessPaymentEventHandler** - Consumes `PaymentProcessedEvent` from PaymentsAPI
+  - Listens to queue `payment-processed-event` (configured in Program.cs)
+  - Adds game to user's library if payment status is "Approved"
+  - Implements idempotency checks to prevent duplicate processing
+  - Automatically discovered and registered by Wolverine
 
 ### Middleware Pipeline
 ```
@@ -593,8 +810,17 @@ Cannot connect to rabbitmq:5672
 ```
 Check OutboxProcessorService logs:
 → Ensure RabbitMQ is healthy
-→ Verify MassTransit configuration
+→ Verify Wolverine configuration in Program.cs
 → Check for errors in application logs
+→ Verify OutboxMessages table has unprocessed messages (processed_at IS NULL)
+```
+
+### PaymentProcessedEvent Not Being Consumed
+```
+→ Verify queue "payment-processed-event" exists in RabbitMQ
+→ Check ProcessPaymentEventHandler is registered
+→ Verify PaymentProcessedEvent structure matches expected format
+→ Check application logs for handler execution
 ```
 
 ### EF Core Migrations Failed

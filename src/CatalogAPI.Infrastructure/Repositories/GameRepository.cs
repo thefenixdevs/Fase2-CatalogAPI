@@ -35,4 +35,41 @@ public class GameRepository : IGameRepository
             .AsNoTracking()
             .FirstOrDefaultAsync(g => g.Id == id, cancellationToken);
     }
+
+    public async Task<Game?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Games
+            .FirstOrDefaultAsync(g => g.Id == id, cancellationToken);
+    }
+
+    public async Task<Game> AddAsync(Game game, CancellationToken cancellationToken = default)
+    {
+        await _context.Games.AddAsync(game, cancellationToken);
+        return game;
+    }
+
+    public async Task UpdateAsync(Game game, CancellationToken cancellationToken = default)
+    {
+        _context.Games.Update(game);
+        await Task.CompletedTask;
+    }
+
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var game = await _context.Games.FindAsync(new object[] { id }, cancellationToken);
+        if (game != null)
+        {
+            _context.Games.Remove(game);
+        }
+    }
+
+    public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Games.AnyAsync(g => g.Id == id, cancellationToken);
+    }
+
+    public async Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken = default)
+    {
+        return await _context.Games.AnyAsync(g => g.Name.ToLower() == name.ToLower(), cancellationToken);
+    }
 }

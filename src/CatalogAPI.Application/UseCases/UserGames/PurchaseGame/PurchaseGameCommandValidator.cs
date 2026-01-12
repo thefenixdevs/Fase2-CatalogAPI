@@ -1,7 +1,6 @@
-using CatalogAPI.Application.Commands;
 using FluentValidation;
 
-namespace CatalogAPI.Application.Validators;
+namespace CatalogAPI.Application.UseCases.UserGames.PurchaseGame;
 
 public class PurchaseGameCommandValidator : AbstractValidator<PurchaseGameCommand>
 {

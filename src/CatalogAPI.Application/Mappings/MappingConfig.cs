@@ -17,5 +17,15 @@ public static class MappingConfig
             .Map(dest => dest.ImageUrl, src => src.ImageUrl)
             .Map(dest => dest.Developer, src => src.Developer)
             .Map(dest => dest.ReleaseDate, src => src.ReleaseDate);
+
+        // CreateGameDto -> Game mapping
+        TypeAdapterConfig<CreateGameDto, Game>.NewConfig()
+            .Map(dest => dest.Name, src => src.Name)
+            .Map(dest => dest.Description, src => src.Description)
+            .Map(dest => dest.Price, src => src.Price)
+            .Map(dest => dest.Genre, src => src.Genre)
+            .Map(dest => dest.ImageUrl, src => src.ImageUrl ?? string.Empty)
+            .Map(dest => dest.Developer, src => src.Developer)
+            .Map(dest => dest.ReleaseDate, src => src.ReleaseDate);
     }
 }

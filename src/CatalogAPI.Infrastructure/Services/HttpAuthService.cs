@@ -11,6 +11,15 @@ public interface IAuthService
     Task<UserContextDto?> ValidateTokenAsync(string token, CancellationToken cancellationToken = default);
 }
 
+// DTO interno para deserializar a resposta do UsersAPI
+internal class UserInfoResponse
+{
+    public Guid UserId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
+}
+
 public class HttpAuthService : IAuthService
 {
     private readonly HttpClient _httpClient;
@@ -21,35 +30,50 @@ public class HttpAuthService : IAuthService
     {
         _httpClient = httpClient;
         _logger = logger;
-        _baseUrl = configuration["AuthService:BaseUrl"] ?? "http://localhost:3000";
+        _baseUrl = configuration["AuthService:BaseUrl"] ?? "http://localhost:8080";
     }
 
     public async Task<UserContextDto?> ValidateTokenAsync(string token, CancellationToken cancellationToken = default)
     {
         try
         {
-            var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/api/auth/validate");
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{_baseUrl}/api/users/me");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             var response = await _httpClient.SendAsync(request, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("Auth service returned status code: {StatusCode}", response.StatusCode);
+                _logger.LogWarning("UsersAPI returned status code: {StatusCode}", response.StatusCode);
                 return null;
             }
 
             var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            var userContext = JsonSerializer.Deserialize<UserContextDto>(content, new JsonSerializerOptions
+            var userInfo = JsonSerializer.Deserialize<UserInfoResponse>(content, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });
+
+            if (userInfo == null)
+            {
+                _logger.LogWarning("Failed to deserialize user info from UsersAPI");
+                return null;
+            }
+
+            // Mapear UserInfoResponse (UserId é Guid) para UserContextDto (UserId é string)
+            var userContext = new UserContextDto
+            {
+                UserId = userInfo.UserId.ToString(),
+                Name = userInfo.Name,
+                Email = userInfo.Email,
+                Role = userInfo.Role
+            };
 
             return userContext;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error validating token with auth service");
+            _logger.LogError(ex, "Error validating token with UsersAPI");
             throw;
         }
     }

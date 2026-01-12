@@ -21,6 +21,40 @@ public class UserGameRepository : IUserGameRepository
             .FirstOrDefaultAsync(ug => ug.UserId == userId && ug.GameId == gameId, cancellationToken);
     }
 
+    public async Task<UserGame?> GetByUserAndGameWithGameAsync(Guid userId, Guid gameId, CancellationToken cancellationToken = default)
+    {
+        return await _context.UserGames
+            .AsNoTracking()
+            .Include(ug => ug.Game)
+            .FirstOrDefaultAsync(ug => ug.UserId == userId && ug.GameId == gameId, cancellationToken);
+    }
+
+    public async Task<IEnumerable<UserGame>> GetByUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _context.UserGames
+            .AsNoTracking()
+            .Where(ug => ug.UserId == userId)
+            .OrderByDescending(ug => ug.PurchaseDate)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<UserGame>> GetByUserWithGameAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _context.UserGames
+            .AsNoTracking()
+            .Include(ug => ug.Game)
+            .Where(ug => ug.UserId == userId)
+            .OrderByDescending(ug => ug.PurchaseDate)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<int> GetCountByUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _context.UserGames
+            .AsNoTracking()
+            .CountAsync(ug => ug.UserId == userId, cancellationToken);
+    }
+
     public async Task AddAsync(UserGame userGame, CancellationToken cancellationToken = default)
     {
         await _context.UserGames.AddAsync(userGame, cancellationToken);

@@ -58,11 +58,13 @@ public class CatalogDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.EventType).IsRequired().HasMaxLength(200);
-            entity.Property(e => e.Payload).IsRequired();
+            entity.Property(e => e.Payload).IsRequired().HasColumnType("text");
             entity.Property(e => e.CorrelationId).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.ProcessedAt).IsRequired(false);
 
-            entity.HasIndex(e => e.ProcessedAt);
             entity.HasIndex(e => e.CorrelationId);
+            entity.HasIndex(e => e.ProcessedAt);
         });
 
         // Seed Games

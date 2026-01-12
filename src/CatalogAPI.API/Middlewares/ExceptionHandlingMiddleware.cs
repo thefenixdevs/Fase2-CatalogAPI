@@ -35,6 +35,7 @@ public class ExceptionHandlingMiddleware
         {
             GameNotFoundException => (HttpStatusCode.NotFound, "Game not found"),
             GameAlreadyPurchasedException => (HttpStatusCode.Conflict, "Game already purchased"),
+            GameAlreadyExistsException => (HttpStatusCode.Conflict, "Game already exists"),
             PublishEventFailedException => (HttpStatusCode.InternalServerError, "Event publishing failed"),
             _ => (HttpStatusCode.InternalServerError, "An error occurred")
         };

@@ -3,7 +3,7 @@ using CatalogAPI.Domain.Interfaces;
 using Mapster;
 using Mediator;
 
-namespace CatalogAPI.Application.Queries;
+namespace CatalogAPI.Application.UseCases.Games.GetGames;
 
 public sealed class GetGamesQueryHandler : IQueryHandler<GetGamesQuery, PaginatedResultDto<GameDto>>
 {

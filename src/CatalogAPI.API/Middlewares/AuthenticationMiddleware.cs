@@ -23,8 +23,32 @@ public class AuthenticationMiddleware
             return;
         }
 
-        // Check if route requires authentication (POST requests)
-        if (context.Request.Method == HttpMethods.Post && path.Contains("/purchase"))
+        // Check if route requires authentication
+        var requiresAuth = false;
+        var requiresAdmin = false;
+        var method = context.Request.Method;
+
+        // Purchase endpoint requires authentication (any user)
+        if (method == HttpMethods.Post && path.Contains("/purchase"))
+        {
+            requiresAuth = true;
+            requiresAdmin = false;
+        }
+        // UserGames endpoints require authentication (any user)
+        else if (path.Contains("/api/user-games"))
+        {
+            requiresAuth = true;
+            requiresAdmin = false;
+        }
+        // Game CRUD endpoints (POST, PUT, DELETE) require Admin
+        else if ((method == HttpMethods.Post || method == HttpMethods.Put || method == HttpMethods.Delete) 
+                 && path.Contains("/api/games"))
+        {
+            requiresAuth = true;
+            requiresAdmin = true;
+        }
+
+        if (requiresAuth)
         {
             var authHeader = context.Request.Headers.Authorization.ToString();
             
@@ -48,10 +72,19 @@ public class AuthenticationMiddleware
                     return;
                 }
 
+                // Check if Admin role is required
+                if (requiresAdmin && !userContext.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                    await context.Response.WriteAsJsonAsync(new { message = "Access denied. Admin role required." });
+                    return;
+                }
+
                 // Store user context for use in controllers
                 context.Items["User"] = userContext;
                 
-                _logger.LogInformation("User authenticated: {UserId}, {Email}", userContext.UserId, userContext.Email);
+                _logger.LogInformation("User authenticated: {UserId}, {Email}, {Role}", 
+                    userContext.UserId, userContext.Email, userContext.Role);
             }
             catch (Exception ex)
             {
