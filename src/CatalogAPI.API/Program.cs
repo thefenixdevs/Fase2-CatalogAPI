@@ -2,12 +2,12 @@ using CatalogAPI.API.Middlewares;
 using CatalogAPI.Application.UseCases.UserGames.ProcessPayment;
 using CatalogAPI.CrossCutting.DependencyInjection;
 using CatalogAPI.CrossCutting.Logging;
-using CatalogAPI.Domain.Events;
 using CatalogAPI.Infrastructure.Data;
 using CatalogAPI.Infrastructure.Data.Seeders;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using Shared.Contracts.Events;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +35,7 @@ try
         // Register consumer for PaymentProcessedEvent
         x.AddConsumer<ProcessPaymentEventConsumer>();
 
+        // Configure JSON serializer to preserve decimal as number, not string
         x.UsingRabbitMq((context, cfg) =>
         {
             var rabbitMqHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
@@ -49,21 +50,32 @@ try
                 h.Password(rabbitMqPassword);
             });
 
-            // Configure explicit entity name for OrderPlacedEvent to maintain compatibility
+            // Configure JSON serializer options to ensure decimal is serialized as number
+            cfg.ConfigureJsonSerializerOptions(options =>
+            {
+                options.PropertyNamingPolicy = null; // PascalCase
+                return options;
+            });
+
+            // Configure explicit entity name for OrderPlacedEvent
             cfg.Message<OrderPlacedEvent>(m =>
             {
                 m.SetEntityName("fcg.order-placed-event");
+            });
+
+            // Configure explicit entity name for PaymentProcessedEvent
+            cfg.Message<PaymentProcessedEvent>(m =>
+            {
+                m.SetEntityName("fcg.payment-processed-event");
             });
 
             // Configure consumer endpoint for PaymentProcessedEvent
             cfg.ReceiveEndpoint("fcg.catalog.payment-processed", e =>
             {
                 // Bind to existing exchange created by PaymentsAPI
+                // Removendo routing key para evitar mensagens em _skipped
                 e.ConfigureConsumeTopology = false;
-                e.Bind("fcg.payment-processed-event", s =>
-                {
-                    s.RoutingKey = "catalog.payment-processed";
-                });
+                e.Bind("fcg.payment-processed-event");
                 e.ConfigureConsumer<ProcessPaymentEventConsumer>(context);
             });
         });

@@ -1,10 +1,10 @@
 using CatalogAPI.Domain.Entities;
-using CatalogAPI.Domain.Events;
 using CatalogAPI.Domain.Interfaces;
 using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Shared.Contracts.Events;
 using System.Reflection;
 using System.Text.Json;
 
@@ -74,7 +74,12 @@ public class OutboxProcessorService : BackgroundService
                     continue;
                 }
 
-                var eventObject = JsonSerializer.Deserialize(message.Payload, eventType);
+                // Use the same JsonSerializerOptions as ManualOutbox for consistency
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = null // PascalCase (padrão)
+                };
+                var eventObject = JsonSerializer.Deserialize(message.Payload, eventType, jsonOptions);
                 if (eventObject == null)
                 {
                     _logger.LogWarning("Failed to deserialize message {MessageId}", message.Id);

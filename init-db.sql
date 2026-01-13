@@ -1,15 +1,6 @@
 -- Script de inicialização do banco de dados
 -- Este script é executado automaticamente quando o container PostgreSQL é criado pela primeira vez
+-- O banco de dados 'catalogdb' é criado automaticamente pela variável POSTGRES_DB no docker-compose
 
--- Garante que o banco de dados existe
-SELECT 'CREATE DATABASE catalogdb'
-WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'catalogdb')\gexec
-
--- Conecta ao banco de dados catalogdb
-\c catalogdb
-
--- Cria extensões úteis
+-- Criar extensões úteis para o banco de dados
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
--- Confirma que o banco foi criado
-SELECT 'Database catalogdb initialized successfully' AS status;

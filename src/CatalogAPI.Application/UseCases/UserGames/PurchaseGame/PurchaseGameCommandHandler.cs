@@ -1,9 +1,9 @@
 using CatalogAPI.Domain.Entities;
-using CatalogAPI.Domain.Events;
 using CatalogAPI.Domain.Exceptions;
 using CatalogAPI.Domain.Interfaces;
 using Mediator;
 using Microsoft.Extensions.Logging;
+using Shared.Contracts.Events;
 
 namespace CatalogAPI.Application.UseCases.UserGames.PurchaseGame;
 
@@ -52,7 +52,8 @@ public sealed class PurchaseGameCommandHandler : ICommandHandler<PurchaseGameCom
         {
             // Create OrderPlacedEvent - do NOT add to library yet
             // The game will be added to library only after PaymentProcessedEvent with status "Approved"
-            var orderPlacedEvent = new OrderPlacedEvent(command.CorrelationId, command.UserId, command.GameId, game.Price);
+            var orderId = Guid.NewGuid();
+            var orderPlacedEvent = new OrderPlacedEvent(orderId, command.UserId, command.GameId, game.Price);
 
             // Publish event via Wolverine Outbox - message will be persisted and sent after transaction commits
             await _outbox.PublishAsync(orderPlacedEvent, cancellationToken);

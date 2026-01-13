@@ -26,6 +26,7 @@
     <ProjectReference Include="..\CatalogAPI.Application\CatalogAPI.Application.csproj" />
     <ProjectReference Include="..\CatalogAPI.Infrastructure\CatalogAPI.Infrastructure.csproj" />
     <ProjectReference Include="..\CatalogAPI.CrossCutting\CatalogAPI.CrossCutting.csproj" />
+    <ProjectReference Include="..\Shared.Contracts\Shared.Contracts.csproj" />
   </ItemGroup>
 
 </Project>
