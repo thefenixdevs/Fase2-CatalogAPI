@@ -25,6 +25,7 @@ public static class InfrastructureServiceExtensions
         // Add Repositories
         services.AddScoped<IGameRepository, GameRepository>();
         services.AddScoped<IUserGameRepository, UserGameRepository>();
+        services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IOutboxMessageRepository, OutboxMessageRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         

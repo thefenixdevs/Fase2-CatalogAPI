@@ -2,7 +2,7 @@ namespace CatalogAPI.Domain.Events;
 
 public class PaymentProcessedEvent
 {
-    public Guid CorrelationId { get; set; }
+    public Guid OrderId { get; set; }
     public Guid UserId { get; set; }
     public Guid GameId { get; set; }
     public decimal Price { get; set; }
@@ -13,9 +13,9 @@ public class PaymentProcessedEvent
     {
     }
 
-    public PaymentProcessedEvent(Guid correlationId, Guid userId, Guid gameId, decimal price, string status)
+    public PaymentProcessedEvent(Guid orderId, Guid userId, Guid gameId, decimal price, string status)
     {
-        CorrelationId = correlationId;
+        OrderId = orderId;
         UserId = userId;
         GameId = gameId;
         Price = price;

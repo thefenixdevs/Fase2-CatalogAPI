@@ -18,7 +18,7 @@ public class ManualOutbox : IOutbox
         var outboxMessage = new OutboxMessage
         {
             Id = Guid.NewGuid(),
-            EventType = typeof(T).FullName ?? typeof(T).Name,
+            EventType = typeof(T).AssemblyQualifiedName ?? typeof(T).FullName ?? typeof(T).Name,
             Payload = JsonSerializer.Serialize(message),
             CreatedAt = DateTime.UtcNow,
             CorrelationId = ExtractCorrelationId(message) ?? Guid.NewGuid().ToString()

@@ -1,13 +1,13 @@
 using CatalogAPI.API.Middlewares;
+using CatalogAPI.Application.UseCases.UserGames.ProcessPayment;
 using CatalogAPI.CrossCutting.DependencyInjection;
 using CatalogAPI.CrossCutting.Logging;
 using CatalogAPI.Domain.Events;
 using CatalogAPI.Infrastructure.Data;
 using CatalogAPI.Infrastructure.Data.Seeders;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
-using Wolverine;
-using Wolverine.RabbitMQ;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,35 +29,43 @@ try
         loggingBuilder.ClearProviders();
     });
 
-    // Configure Wolverine with RabbitMQ
-    builder.Host.UseWolverine(opts =>
+    // Configure MassTransit with RabbitMQ
+    builder.Services.AddMassTransit(x =>
     {
-        opts.UseRabbitMq(rabbit =>
+        // Register consumer for PaymentProcessedEvent
+        x.AddConsumer<ProcessPaymentEventConsumer>();
+
+        x.UsingRabbitMq((context, cfg) =>
         {
             var rabbitMqHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
             var rabbitMqPort = ushort.Parse(builder.Configuration["RabbitMQ:Port"] ?? "5672");
             var rabbitMqUsername = builder.Configuration["RabbitMQ:Username"] ?? "guest";
             var rabbitMqPassword = builder.Configuration["RabbitMQ:Password"] ?? "guest";
+            var rabbitMqVirtualHost = builder.Configuration["RabbitMQ:VirtualHost"] ?? "/";
 
-            rabbit.HostName = rabbitMqHost;
-            rabbit.Port = rabbitMqPort;
-            rabbit.UserName = rabbitMqUsername;
-            rabbit.Password = rabbitMqPassword;
-            rabbit.VirtualHost = "/";
-        })
-        .AutoProvision();
-
-        // Publish OrderPlacedEvent to RabbitMQ exchange
-        opts.PublishMessage<OrderPlacedEvent>()
-            .ToRabbitExchange("fcg.order-placed-event", ex => 
+            cfg.Host(rabbitMqHost, rabbitMqPort, rabbitMqVirtualHost, h =>
             {
-                ex.ExchangeType = ExchangeType.Topic;
+                h.Username(rabbitMqUsername);
+                h.Password(rabbitMqPassword);
             });
 
-        // Listen for PaymentProcessedEvent from PaymentsAPI
-        opts.ListenToRabbitQueue("fcg.catalog.payment-processed", q =>
-        {
-            q.BindExchange("fcg.payment-processed-event", "catalog.payment-processed");
+            // Configure explicit entity name for OrderPlacedEvent to maintain compatibility
+            cfg.Message<OrderPlacedEvent>(m =>
+            {
+                m.SetEntityName("fcg.order-placed-event");
+            });
+
+            // Configure consumer endpoint for PaymentProcessedEvent
+            cfg.ReceiveEndpoint("fcg.catalog.payment-processed", e =>
+            {
+                // Bind to existing exchange created by PaymentsAPI
+                e.ConfigureConsumeTopology = false;
+                e.Bind("fcg.payment-processed-event", s =>
+                {
+                    s.RoutingKey = "catalog.payment-processed";
+                });
+                e.ConfigureConsumer<ProcessPaymentEventConsumer>(context);
+            });
         });
     });
 

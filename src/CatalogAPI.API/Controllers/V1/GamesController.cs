@@ -4,7 +4,6 @@ using CatalogAPI.Application.UseCases.Games.CreateGame;
 using CatalogAPI.Application.UseCases.Games.DeleteGame;
 using CatalogAPI.Application.UseCases.Games.GetGames;
 using CatalogAPI.Application.UseCases.Games.UpdateGame;
-using CatalogAPI.Application.UseCases.UserGames.PurchaseGame;
 using CatalogAPI.Domain.Exceptions;
 using Mediator;
 using Microsoft.AspNetCore.Mvc;
@@ -166,56 +165,6 @@ public class GamesController : ControllerBase
         catch (GameNotFoundException ex)
         {
             return NotFound(new { message = ex.Message });
-        }
-    }
-
-    /// <summary>
-    /// Purchase a game (requires authentication)
-    /// </summary>
-    [HttpPost("{gameId}/purchase")]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> PurchaseGame(
-        Guid gameId,
-        CancellationToken cancellationToken = default)
-    {
-        // Get user from context (set by AuthenticationMiddleware)
-        var userContext = HttpContext.Items["User"] as UserContextDto;
-        if (userContext == null)
-        {
-            return Unauthorized(new { message = "User not authenticated" });
-        }
-
-        // Get correlation ID from context
-        var correlationId = HttpContext.Items["CorrelationId"] as Guid? ?? Guid.NewGuid();
-
-        try
-        {
-            var command = new PurchaseGameCommand(
-                gameId, 
-                correlationId, 
-                Guid.Parse(userContext.UserId));
-
-            var result = await _mediator.Send(command, cancellationToken);
-
-            _logger.LogInformation("Game purchase successful. GameId: {GameId}, UserId: {UserId}", 
-                gameId, userContext.UserId);
-
-            return CreatedAtAction(
-                nameof(GetGames), 
-                new { }, 
-                new { gameId = result, message = "Game purchased successfully" });
-        }
-        catch (GameNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (GameAlreadyPurchasedException ex)
-        {
-            return Conflict(new { message = ex.Message });
         }
     }
 }

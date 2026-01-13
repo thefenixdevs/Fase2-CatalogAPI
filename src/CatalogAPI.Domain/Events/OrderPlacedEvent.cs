@@ -1,19 +1,30 @@
+using System.Text.Json.Serialization;
+
 namespace CatalogAPI.Domain.Events;
 
 public class OrderPlacedEvent
 {
-    public Guid CorrelationId { get; set; }
+    [JsonPropertyName("orderId")]
+    public Guid OrderId { get; set; }
+    
+    [JsonPropertyName("userId")]
     public Guid UserId { get; set; }
+    
+    [JsonPropertyName("gameId")]
     public Guid GameId { get; set; }
+    
+    [JsonPropertyName("price")]
     public decimal Price { get; set; }
-    public DateTime OccurredAt { get; set; }
 
-    public OrderPlacedEvent(Guid correlationId, Guid userId, Guid gameId, decimal price)
+    public OrderPlacedEvent()
     {
-        CorrelationId = correlationId;
+    }
+
+    public OrderPlacedEvent(Guid orderId, Guid userId, Guid gameId, decimal price)
+    {
+        OrderId = orderId;
         UserId = userId;
         GameId = gameId;
         Price = price;
-        OccurredAt = DateTime.UtcNow;
     }
 }

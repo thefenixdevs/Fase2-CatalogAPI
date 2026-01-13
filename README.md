@@ -25,8 +25,8 @@ The API implements the **Manual Outbox Pattern** for transactional consistency, 
 - **Connection String (Docker):** `Host=postgres;Port=5432;Database=catalogdb;Username=admin;Password=admin123`
 
 ### Event-Driven Architecture
-- **Wolverine 5.9.2** - Message bus and event handling
-- **Wolverine.RabbitMQ 5.9.2** - RabbitMQ integration
+- **MassTransit 8.5.7** - Message bus and event handling
+- **MassTransit.RabbitMQ 8.5.7** - RabbitMQ integration
 - **RabbitMQ 4.0** - Event broker
 - **Manual Outbox Pattern** - Transactional event publishing with 5-second batch processing (100 items per batch)
 
@@ -630,7 +630,7 @@ The CatalogAPI implements a **manual Outbox Pattern** to ensure reliable event p
 2. **Background Processing:**
    - `OutboxProcessorService` runs every 5 seconds
    - Fetches up to 100 unprocessed messages from `OutboxMessages`
-   - Publishes each event to RabbitMQ via Wolverine
+   - Publishes each event to RabbitMQ via MassTransit
    - Marks messages as processed after successful publishing
 
 3. **Benefits:**
@@ -773,16 +773,16 @@ Fase2-CatalogAPI/
 ### Background Services
 - **OutboxProcessorService** runs every 5 seconds
   - Fetches unprocessed OutboxMessages in batches of 100
-  - Publishes events to RabbitMQ via Wolverine
+  - Publishes events to RabbitMQ via MassTransit
   - Marks messages as processed after successful publishing
   - Retries failed messages automatically
 
-### Message Handlers (Wolverine)
-- **ProcessPaymentEventHandler** - Consumes `PaymentProcessedEvent` from PaymentsAPI
-  - Listens to queue `payment-processed-event` (configured in Program.cs)
+### Message Consumers (MassTransit)
+- **ProcessPaymentEventConsumer** - Consumes `PaymentProcessedEvent` from PaymentsAPI
+  - Listens to queue `fcg.catalog.payment-processed` (configured in Program.cs)
   - Adds game to user's library if payment status is "Approved"
   - Implements idempotency checks to prevent duplicate processing
-  - Automatically discovered and registered by Wolverine
+  - Registered as MassTransit consumer in Program.cs
 
 ### Middleware Pipeline
 ```
@@ -810,7 +810,7 @@ Cannot connect to rabbitmq:5672
 ```
 Check OutboxProcessorService logs:
 → Ensure RabbitMQ is healthy
-→ Verify Wolverine configuration in Program.cs
+→ Verify MassTransit configuration in Program.cs
 → Check for errors in application logs
 → Verify OutboxMessages table has unprocessed messages (processed_at IS NULL)
 ```

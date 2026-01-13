@@ -1,10 +1,12 @@
 using CatalogAPI.Domain.Entities;
+using CatalogAPI.Domain.Events;
 using CatalogAPI.Domain.Interfaces;
+using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Reflection;
 using System.Text.Json;
-using Wolverine;
 
 namespace CatalogAPI.Infrastructure.BackgroundServices;
 
@@ -48,7 +50,7 @@ public class OutboxProcessorService : BackgroundService
     {
         using var scope = _serviceProvider.CreateScope();
         var outboxRepository = scope.ServiceProvider.GetRequiredService<IOutboxMessageRepository>();
-        var messageBus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+        var publishEndpoint = scope.ServiceProvider.GetRequiredService<IPublishEndpoint>();
 
         var unprocessedMessages = await outboxRepository.GetUnprocessedMessagesAsync(BatchSize, cancellationToken);
 
@@ -64,7 +66,7 @@ public class OutboxProcessorService : BackgroundService
             try
             {
                 // Deserialize the message payload
-                var eventType = Type.GetType(message.EventType);
+                var eventType = GetTypeFromAssemblies(message.EventType);
                 if (eventType == null)
                 {
                     _logger.LogWarning("Event type {EventType} not found, marking as processed", message.EventType);
@@ -80,13 +82,39 @@ public class OutboxProcessorService : BackgroundService
                     continue;
                 }
 
-                // Publish to Wolverine/RabbitMQ
-                await messageBus.PublishAsync(eventObject);
+                // Publish to MassTransit/RabbitMQ
+                // Use reflection to call Publish<T> with the correct type
+                var publishMethod = typeof(IPublishEndpoint).GetMethods()
+                    .FirstOrDefault(m => m.Name == "Publish" && 
+                                        m.IsGenericMethod &&
+                                        m.GetParameters().Length == 2 &&
+                                        m.GetParameters()[1].ParameterType == typeof(CancellationToken));
+                
+                if (publishMethod != null)
+                {
+                    var genericMethod = publishMethod.MakeGenericMethod(eventType);
+                    await (Task)genericMethod.Invoke(publishEndpoint, new[] { eventObject, cancellationToken })!;
+                    
+                    if (eventObject is OrderPlacedEvent orderPlacedEvent)
+                    {
+                        _logger.LogInformation(
+                            "[CatalogAPI] Published OrderPlacedEvent. OrderId: {OrderId}, GameId: {GameId}, UserId: {UserId}",
+                            orderPlacedEvent.OrderId, orderPlacedEvent.GameId, orderPlacedEvent.UserId);
+                    }
+                    else
+                    {
+                        _logger.LogDebug("Published message of type {EventType}", message.EventType);
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("Could not publish message of type {EventType}", message.EventType);
+                }
 
                 // Mark as processed
                 await outboxRepository.MarkAsProcessedAsync(message.Id, cancellationToken);
 
-                _logger.LogDebug("Processed outbox message {MessageId} of type {EventType}", 
+                _logger.LogDebug("Processed outbox message {MessageId} of type {EventType}",
                     message.Id, message.EventType);
             }
             catch (Exception ex)
@@ -98,5 +126,38 @@ public class OutboxProcessorService : BackgroundService
 
         // Save all changes
         await outboxRepository.SaveChangesAsync(cancellationToken);
+    }
+
+    private static Type? GetTypeFromAssemblies(string typeName)
+    {
+        // First try Type.GetType (works for AssemblyQualifiedName or types in mscorlib)
+        var type = Type.GetType(typeName);
+        if (type != null)
+        {
+            return type;
+        }
+
+        // Search in all loaded assemblies
+        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            type = assembly.GetType(typeName);
+            if (type != null)
+            {
+                return type;
+            }
+        }
+
+        // If not found, try to match by full name (without assembly info)
+        var typeNameWithoutAssembly = typeName.Split(',')[0].Trim();
+        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            type = assembly.GetTypes().FirstOrDefault(t => t.FullName == typeNameWithoutAssembly);
+            if (type != null)
+            {
+                return type;
+            }
+        }
+
+        return null;
     }
 }

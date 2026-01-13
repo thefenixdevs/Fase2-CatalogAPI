@@ -28,8 +28,8 @@ public class AuthenticationMiddleware
         var requiresAdmin = false;
         var method = context.Request.Method;
 
-        // Purchase endpoint requires authentication (any user)
-        if (method == HttpMethods.Post && path.Contains("/purchase"))
+        // Orders endpoint requires authentication (any user)
+        if (method == HttpMethods.Post && path.Contains("/api/v1/orders"))
         {
             requiresAuth = true;
             requiresAdmin = false;
